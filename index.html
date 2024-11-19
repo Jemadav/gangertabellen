@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gångertabellen Äventyr</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #2c1810;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .mascot {
+            font-size: 50px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .title {
+            color: #4a148c;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .table-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .table-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: #9c27b0;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+        }
+
+        .table-button:active {
+            transform: scale(0.95);
+        }
+
+        .table-button.completed {
+            background: #4a148c;
+        }
+
+        .table-button.active {
+            background: #6a1b9a;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(156, 39, 176, 0.5);
+        }
+
+        .problem {
+            font-size: 40px;
+            text-align: center;
+            margin: 30px 0;
+            font-weight: bold;
+            color: #4a148c;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            border: 3px solid #9c27b0;
+            border-radius: 15px;
+            text-align: center;
+            -webkit-appearance: none;
+            margin-bottom: 15px;
+            background: white;
+            color: #4a148c;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #6a1b9a;
+            box-shadow: 0 0 10px rgba(156, 39, 176, 0.3);
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            border: none;
+            border-radius: 15px;
+            background: #9c27b0;
+            color: white;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        .progress-container {
+            background: #f3e5f5;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .progress-text {
+            color: #4a148c;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: #e1bee7;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9c27b0, #6a1b9a);
+            transition: width 0.3s ease;
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 36px;
+        }
+
+        .feedback.correct {
+            color: #4a148c;
+        }
+
+        .feedback.incorrect {
+            color: #c2185b;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .star {
+            position: absolute;
+            font-size: 30px;
+            animation: fall 1.5s linear forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="mascot">🦉</div>
+            <div class="title">Gångertabellen Äventyr</div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-text">Din framgång</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0/10 klara</div>
+        </div>
+
+        <div class="table-selector" id="tableSelector"></div>
+        
+        <div id="problem" class="problem"></div>
+
+        <div class="input-container">
+            <input type="number" id="answer" inputmode="numeric" pattern="[0-9]*" placeholder="Skriv ditt svar här">
+            <button class="button" onclick="checkAnswer()">Svara</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        let currentTable = 2;
+        let currentMultiplier = 1;
+        let tableProgress = {};
+
+        function initializeTableButtons() {
+            const selector = document.getElementById('tableSelector');
+            for (let i = 2; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.className = 'table-button';
+                button.textContent = i;
+                button.onclick = () => selectTable(i);
+                selector.appendChild(button);
+            }
+            selectTable(2);
+        }
+
+        function selectTable(number) {
+            document.querySelectorAll('.table-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent == number) btn.classList.add('active');
+            });
+            currentTable = number;
+            currentMultiplier = 1;
+            generateProblem();
+            updateProgress();
+        }
+
+        function generateProblem() {
+            document.getElementById('problem').textContent = 
+                `${currentTable} × ${currentMultiplier} = ?`;
+            document.getElementById('answer').value = '';
+            document.getElementById('answer').focus();
+            document.getElementById('feedback').textContent = '';
+        }
+
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.innerHTML = '';
+            
+            for (let i = 0; i < 10; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.textContent = '⭐';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 0.5}s`;
+                celebration.appendChild(star);
+            }
+
+            setTimeout(() => {
+                celebration.innerHTML = '';
+            }, 2000);
+        }
+
+        function checkAnswer() {
+            const answer = parseInt(document.getElementById('answer').value);
+            const correctAnswer = currentTable * currentMultiplier;
+            const feedback = document.getElementById('feedback');
+
+            if (answer === correctAnswer) {
+                feedback.textContent = '🎉 Rätt svar!';
+                feedback.className = 'feedback correct';
+                
+                if (!tableProgress[currentTable]) {
+                    tableProgress[currentTable] = new Set();
+                }
+                tableProgress[currentTable].add(currentMultiplier);
+                
+                showCelebration();
+                
+                currentMultiplier++;
+                if (currentMultiplier > 10) {
+                    if (tableProgress[currentTable].size === 10) {
+                        document.querySelector(`.table-button:nth-child(${currentTable-1})`).classList.add('completed');
+                    }
+                    currentMultiplier = 1;
+                }
+                setTimeout(generateProblem, 1500);
+                updateProgress();
+            } else {
+                feedback.textContent = '💪 Försök igen!';
+                feedback.className = 'feedback incorrect';
+            }
+        }
+
+        function updateProgress() {
+            const progress = tableProgress[currentTable] ? tableProgress[currentTable].size : 0;
+            const percentage = (progress / 10) * 100;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+            document.getElementById('progressText').textContent = `${progress}/10 klara`;
+        }
+
+        document.getElementById('answer').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        initializeTableButtons();
+    </script>
+</body>
+</html>
